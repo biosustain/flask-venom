@@ -1,36 +1,39 @@
-"""
-Flask-SQLite3
--------------
+import codecs
 
-This is the description for that library
-"""
 from setuptools import setup
 
 
 setup(
     name='Flask-Venom',
-    version='1.0.0',
-    url='http://example.com/flask-sqlite3/',
+    version='1.0.0a1',
+    url='https://github.com/biosustain/flask-venom',
     license='Apache 2',
-    author='Your Name',
-    author_email='your-email@example.com',
-    description='Very short description',
-    long_description=__doc__,
+    author='Lars Schöning',
+    author_email='lays@biosustain.dtu.dk',
+    description='Flask extension for the Venom RPC framework',
+    long_description=codecs.open('README.rst', encoding='utf-8').read(),
     py_modules=['flask_venom'],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
     install_requires=[
-        'Flask',
+        'flask',
         'venom'
     ],
+    test_suite='nose.collector',
+    tests_require=[
+        'flask-testing'
+    ],
     classifiers=[
+        'Development Status :: 3 - Alpha',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Internet :: WWW/HTTP',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]
 )
