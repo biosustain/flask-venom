@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Venom',
-    version='1.0.0a1',
+    version='1.0.0',
     url='https://github.com/biosustain/flask-venom',
     license='MIT',
     author='Lars Schöning',
