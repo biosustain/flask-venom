@@ -52,7 +52,7 @@ def http_view_factory(venom: 'venom.rpc.Venom',
                     pass
 
             instance = venom.get_instance(service)
-            response = loop.run_until_complete(rpc.invoke(instance, request))
+            response = loop.run_until_complete(rpc.invoke(instance, request, loop=loop))
             return flask.Response(rpc_response.pack(response),
                                   mimetype=rpc_error_response.mime,
                                   status=http_status)
