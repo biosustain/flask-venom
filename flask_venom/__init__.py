@@ -78,6 +78,7 @@ class Venom(venom.rpc.Venom):
             self.blueprint = app
         else:
             self._init_app(app)
+            self.app = app
 
     def _deferred_blueprint_init(self, setup_state: 'flask.blueprints.BlueprintSetupState'):
         self._init_app(setup_state.app, url_prefix=setup_state.url_prefix)
