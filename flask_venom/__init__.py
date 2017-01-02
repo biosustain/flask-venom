@@ -4,9 +4,17 @@ from typing import Union, Type
 import flask
 import venom.rpc
 from venom.exceptions import ErrorResponse, Error
+from venom.rpc import RequestContext
 from venom.rpc.method import HTTPVerb, HTTPFieldLocation
 from venom.serialization import WireFormat, JSON, string_decoder
 from .utils import uri_pattern_to_uri_rule
+
+
+class FlaskRequestContext(RequestContext):
+    # TODO consistent request context shared between implementations
+
+    def __init__(self, request: flask.Request):
+        self.request = request
 
 
 def http_view_factory(venom: 'venom.rpc.Venom',
@@ -51,7 +59,8 @@ def http_view_factory(venom: 'venom.rpc.Venom',
                 except KeyError:
                     pass
 
-            instance = venom.get_instance(service)
+            context = FlaskRequestContext(flask.request)
+            instance = venom.get_instance(service, context)
             response = loop.run_until_complete(rpc.invoke(instance, request, loop=loop))
             return flask.Response(rpc_response.pack(response),
                                   mimetype=rpc_error_response.mime,
