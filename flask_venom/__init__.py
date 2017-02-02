@@ -6,7 +6,7 @@ import venom.rpc
 from venom.exceptions import ErrorResponse, Error
 from venom.rpc import RequestContext
 from venom.rpc.method import HTTPVerb, HTTPFieldLocation
-from venom.serialization import WireFormat, JSON, string_decoder
+from venom.protocol import Protocol, JSON, string_decoder
 from .utils import uri_pattern_to_uri_rule
 
 
@@ -20,20 +20,20 @@ class FlaskRequestContext(RequestContext):
 def http_view_factory(venom: 'venom.rpc.Venom',
                       service: Type['venom.rpc.service.Service'],
                       rpc: venom.rpc.method.Method,
-                      wire_format: Type[WireFormat],
+                      protocol_factory: Type[Protocol],
                       loop: 'asyncio.BaseEventLoop' = None):
-    rpc_request = wire_format(rpc.request)
-    rpc_response = wire_format(rpc.response)
-    rpc_error_response = wire_format(ErrorResponse)
+    rpc_request = protocol_factory(rpc.request)
+    rpc_response = protocol_factory(rpc.response)
+    rpc_error_response = protocol_factory(ErrorResponse)
 
     http_status = rpc.http_status
 
     http_field_locations = rpc.http_field_locations()
     http_request_body = http_field_locations[HTTPFieldLocation.BODY]
-    http_request_query = [(name, string_decoder(rpc.request.__fields__[name], wire_format))
+    http_request_query = [(name, string_decoder(rpc.request.__fields__[name], protocol_factory))
                           for name in http_field_locations[HTTPFieldLocation.QUERY]]
 
-    http_request_path = [(name, string_decoder(rpc.request.__fields__[name], wire_format))
+    http_request_path = [(name, string_decoder(rpc.request.__fields__[name], protocol_factory))
                          for name in http_field_locations[HTTPFieldLocation.PATH]]
 
     if loop is None:
@@ -104,7 +104,7 @@ class Venom(venom.rpc.Venom):
 
     def _add_method_url_rule(self, service: Type['venom.rpc.service.Service'], rpc: 'venom.rpc.method.Method'):
         rule = uri_pattern_to_uri_rule(rpc.http_rule(service))
-        view = http_view_factory(self, service, rpc, wire_format=JSON)
+        view = http_view_factory(self, service, rpc, protocol_factory=JSON)
         methods = [rpc.http_verb.value]
         endpoint = '.'.join((service.__meta__.name, rpc.name))
 

@@ -39,7 +39,7 @@ class FlaskVenomTestCase(TestCase):
             message = String()
 
         class HelloService(Service):
-            @http.POST('/greet/{name}')
+            @http.POST('./greet/{name}')
             def say_hello(self, request: HelloRequest) -> HelloResponse:
                 text = "Hello, {}!".format(request.name)
 
@@ -70,4 +70,4 @@ class FlaskVenomTestCase(TestCase):
 
         response = self.client.get("/hello/goodbye")
         self.assertEqual(response.status_code, 501)
-        self.assertEqual(response.json, {'message': 'Not Implemented', 'status': 501})
+        self.assertEqual(response.json, {'description': 'Not Implemented', 'status': 501})
