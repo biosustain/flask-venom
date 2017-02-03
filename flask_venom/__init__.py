@@ -6,7 +6,7 @@ import venom.rpc
 from venom.exceptions import ErrorResponse, Error
 from venom.rpc import RequestContext
 from venom.rpc.method import HTTPVerb, HTTPFieldLocation
-from venom.protocol import Protocol, JSON, string_decoder
+from venom.protocol import Protocol, JSON, string_decoder, DictProtocol, URIString
 from .utils import uri_pattern_to_uri_rule
 
 
@@ -21,43 +21,27 @@ def http_view_factory(venom: 'venom.rpc.Venom',
                       service: Type['venom.rpc.service.Service'],
                       rpc: venom.rpc.method.Method,
                       protocol_factory: Type[Protocol],
+                      query_protocol_factory: Type[DictProtocol] = URIString,
+                      path_protocol_factory: Type[DictProtocol] = URIString,
                       loop: 'asyncio.BaseEventLoop' = None):
-    rpc_request = protocol_factory(rpc.request)
     rpc_response = protocol_factory(rpc.response)
     rpc_error_response = protocol_factory(ErrorResponse)
 
     http_status = rpc.http_status
 
     http_field_locations = rpc.http_field_locations()
-    http_request_body = http_field_locations[HTTPFieldLocation.BODY]
-    http_request_query = [(name, string_decoder(rpc.request.__fields__[name], protocol_factory))
-                          for name in http_field_locations[HTTPFieldLocation.QUERY]]
-
-    http_request_path = [(name, string_decoder(rpc.request.__fields__[name], protocol_factory))
-                         for name in http_field_locations[HTTPFieldLocation.PATH]]
+    http_request_body = protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.BODY])
+    http_request_query = query_protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.QUERY])
+    http_request_path = path_protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.PATH])
 
     if loop is None:
         loop = asyncio.get_event_loop()
 
     def view(**kwargs):
         try:
-            if http_request_body:
-                request = rpc_request.unpack(flask.request.get_data(), include=http_request_body)
-            else:
-                request = rpc.request()
-                for name, decode in http_request_query:
-                    try:
-                        request[name] = decode(flask.request.args[name])
-                    except KeyError:
-                        pass
-
-                rpc_request.decode(flask.request.args, include=http_request_query)
-
-            for name, decode in http_request_path:
-                try:
-                    request[name] = decode(kwargs[name])
-                except KeyError:
-                    pass
+            request = http_request_body.unpack(flask.request.get_data())
+            http_request_query.decode(flask.request.args, request)
+            http_request_path.decode(kwargs, request)
 
             context = FlaskRequestContext(flask.request)
             instance = venom.get_instance(service, context)
@@ -69,7 +53,6 @@ def http_view_factory(venom: 'venom.rpc.Venom',
             return flask.Response(rpc_error_response.pack(e.format()),
                                   mimetype=rpc_error_response.mime,
                                   status=e.http_status)
-
     return view
 
 
