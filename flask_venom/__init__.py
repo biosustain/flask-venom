@@ -5,8 +5,8 @@ import flask
 import venom.rpc
 from venom.exceptions import ErrorResponse, Error
 from venom.rpc import RequestContext
-from venom.rpc.method import HTTPVerb, HTTPFieldLocation
-from venom.protocol import Protocol, JSON, string_decoder, DictProtocol, URIString
+from venom.rpc.method import HTTPFieldLocation
+from venom.protocol import Protocol, JSON, DictProtocol, URIString
 from .utils import uri_pattern_to_uri_rule
 
 
