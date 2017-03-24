@@ -18,21 +18,20 @@ class FlaskRequestContext(RequestContext):
 
 
 def http_view_factory(venom: 'venom.rpc.Venom',
-                      service: Type['venom.rpc.service.Service'],
-                      rpc: venom.rpc.method.Method,
+                      method: venom.rpc.method.Method,
                       protocol_factory: Type[Protocol],
                       query_protocol_factory: Type[DictProtocol] = URIString,
                       path_protocol_factory: Type[DictProtocol] = URIString,
                       loop: 'asyncio.BaseEventLoop' = None):
-    rpc_response = protocol_factory(rpc.response)
+    rpc_response = protocol_factory(method.response)
     rpc_error_response = protocol_factory(ErrorResponse)
 
-    http_status = rpc.http_status
+    http_status = method.http_status
 
-    http_field_locations = rpc.http_field_locations()
-    http_request_body = protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.BODY])
-    http_request_query = query_protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.QUERY])
-    http_request_path = path_protocol_factory(rpc.request, http_field_locations[HTTPFieldLocation.PATH])
+    http_field_locations = method.http_field_locations()
+    http_request_body = protocol_factory(method.request, http_field_locations[HTTPFieldLocation.BODY])
+    http_request_query = query_protocol_factory(method.request, http_field_locations[HTTPFieldLocation.QUERY])
+    http_request_path = path_protocol_factory(method.request, http_field_locations[HTTPFieldLocation.PATH])
 
     if loop is None:
         loop = asyncio.get_event_loop()
@@ -43,7 +42,7 @@ def http_view_factory(venom: 'venom.rpc.Venom',
             http_request_query.decode(flask.request.args, request)
             http_request_path.decode(kwargs, request)
 
-            response = loop.run_until_complete(venom.invoke(service, rpc, request, loop=loop))
+            response = loop.run_until_complete(venom.invoke(method, request, loop=loop))
             return flask.Response(rpc_response.pack(response),
                                   mimetype=rpc_error_response.mime,
                                   status=http_status)
@@ -83,11 +82,11 @@ class Venom(venom.rpc.Venom):
 
             app.add_url_rule(rule, view_func=view, endpoint=endpoint, methods=methods)
 
-    def _add_method_url_rule(self, service: Type['venom.rpc.service.Service'], rpc: 'venom.rpc.method.Method'):
-        rule = uri_pattern_to_uri_rule(rpc.http_rule(service))
-        view = http_view_factory(self, service, rpc, protocol_factory=JSON)
-        methods = [rpc.http_verb.value]
-        endpoint = '.'.join((service.__meta__.name, rpc.name))
+    def _add_method_url_rule(self, method: 'venom.rpc.method.Method'):
+        rule = uri_pattern_to_uri_rule(method.http_path)
+        view = http_view_factory(self, method, protocol_factory=JSON)
+        methods = [method.http_method.value]
+        endpoint = '.'.join((method.service.__meta__.name, method.name))
 
         if self.app:
             self.app.add_url_rule(rule, view_func=view, endpoint=endpoint, methods=methods)
@@ -104,5 +103,5 @@ class Venom(venom.rpc.Venom):
         if isinstance(service, venom.rpc.Stub):
             return
 
-        for rpc in service.__methods__.values():
-            self._add_method_url_rule(service, rpc)
+        for method in service.__methods__.values():
+            self._add_method_url_rule(method)
