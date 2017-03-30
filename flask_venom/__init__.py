@@ -103,5 +103,5 @@ class Venom(venom.rpc.Venom):
         if isinstance(service, venom.rpc.Stub):
             return
 
-        for method in service.__methods__.values():
+        for method in self.get_instance(service).__methods__.values():
             self._add_method_url_rule(method)
