@@ -21,8 +21,8 @@ This extension currently supports synchronous request/reply only.
         def say_hello(self) -> str:
             return 'Hello!'
 
-    venom.add(HelloService)
     venom = Venom(app)
+    venom.add(HelloService)
 
     if __name__ == "__main__":
         app.run()
