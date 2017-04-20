@@ -1,18 +1,18 @@
 import codecs
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 setup(
     name='Flask-Venom',
-    version='1.0.1',
+    version='1.0.2',
+    packages=find_packages(exclude=['*tests*']),
     url='https://github.com/biosustain/flask-venom',
     license='MIT',
     author='Lars Schöning',
     author_email='lays@biosustain.dtu.dk',
     description='Flask extension for the Venom RPC framework',
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
-    py_modules=['flask_venom'],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
