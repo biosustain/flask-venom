@@ -7,7 +7,6 @@ from venom.exceptions import ErrorResponse, Error
 from venom.rpc import RequestContext
 from venom.rpc.method import HTTPFieldLocation
 from venom.protocol import Protocol, JSON, DictProtocol, URIString
-from .utils import uri_pattern_to_uri_rule
 
 
 class FlaskRequestContext(RequestContext):
@@ -83,7 +82,7 @@ class Venom(venom.rpc.Venom):
             app.add_url_rule(rule, view_func=view, endpoint=endpoint, methods=methods)
 
     def _add_method_url_rule(self, method: 'venom.rpc.method.Method'):
-        rule = uri_pattern_to_uri_rule(method.http_path)
+        rule = method.format_http_path(before_field_template='<', after_field_template='>')
         view = http_view_factory(self, method, protocol_factory=JSON)
         methods = [method.http_method.value]
         endpoint = '.'.join((method.service.__meta__.name, method.name))

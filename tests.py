@@ -58,6 +58,23 @@ class FlaskVenomTestCase(TestCase):
         self.assert200(response)
         self.assertEqual(response.json, {'message': 'HELLO, PERSON!'})
 
+    def test_get_request_path_template(self):
+        venom = Venom(self.app)
+
+        class GetPetRequest(Message):
+            pet_id: int
+
+        class PetService(Service):
+            @http.GET('./{pet_id}', request=GetPetRequest)
+            def get_pet(self, pet_id: int) -> int:
+                return pet_id
+
+        venom.add(PetService)
+
+        response = self.client.get("/pet/5")
+        self.assert200(response)
+        self.assertEqual(response.json, 5)
+
     def test_exception(self):
         venom = Venom(self.app)
 
