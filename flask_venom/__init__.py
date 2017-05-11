@@ -3,10 +3,11 @@ from typing import Union, Type
 
 import flask
 import venom.rpc
+from venom.common import FieldMask
 from venom.exceptions import ErrorResponse, Error
 from venom.rpc import RequestContext
 from venom.rpc.method import HTTPFieldLocation
-from venom.protocol import Protocol, JSON, DictProtocol, URIString
+from venom.protocol import Protocol, JSONProtocol, URIStringProtocol, URIStringDictMessageTranscoder
 
 
 class FlaskRequestContext(RequestContext):
@@ -19,8 +20,6 @@ class FlaskRequestContext(RequestContext):
 def http_view_factory(venom: 'venom.rpc.Venom',
                       method: venom.rpc.method.Method,
                       protocol_factory: Type[Protocol],
-                      query_protocol_factory: Type[DictProtocol] = URIString,
-                      path_protocol_factory: Type[DictProtocol] = URIString,
                       loop: 'asyncio.BaseEventLoop' = None):
     rpc_response = protocol_factory(method.response)
     rpc_error_response = protocol_factory(ErrorResponse)
@@ -28,9 +27,13 @@ def http_view_factory(venom: 'venom.rpc.Venom',
     http_status = method.http_status
 
     http_field_locations = method.http_field_locations()
-    http_request_body = protocol_factory(method.request, http_field_locations[HTTPFieldLocation.BODY])
-    http_request_query = query_protocol_factory(method.request, http_field_locations[HTTPFieldLocation.QUERY])
-    http_request_path = path_protocol_factory(method.request, http_field_locations[HTTPFieldLocation.PATH])
+    http_request_body = JSONProtocol(method.request, FieldMask(http_field_locations[HTTPFieldLocation.BODY]))
+    http_request_query = URIStringDictMessageTranscoder(URIStringProtocol,
+                                                        method.request,
+                                                        FieldMask(http_field_locations[HTTPFieldLocation.QUERY]))
+    http_request_path = URIStringDictMessageTranscoder(URIStringProtocol,
+                                                       method.request,
+                                                       FieldMask(http_field_locations[HTTPFieldLocation.PATH]))
 
     if loop is None:
         loop = asyncio.get_event_loop()
@@ -83,7 +86,7 @@ class Venom(venom.rpc.Venom):
 
     def _add_method_url_rule(self, method: 'venom.rpc.method.Method'):
         rule = method.format_http_path(before_field_template='<', after_field_template='>')
-        view = http_view_factory(self, method, protocol_factory=JSON)
+        view = http_view_factory(self, method, protocol_factory=JSONProtocol)
         methods = [method.http_method.value]
         endpoint = '.'.join((method.service.__meta__.name, method.name))
 
